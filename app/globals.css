@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+body {
+  background: #f9fafb;
+  color: #171717;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* GPT가 생성한 HTML 테이블 렌더링 및 편집 */
+.doc-content[contenteditable]:focus,
+.doc-content[contenteditable]:focus-within {
+  background-color: #f0f7ff;
+}
+.doc-content[contenteditable] td:focus,
+.doc-content[contenteditable] td:hover {
+  outline: 1px dashed #93c5fd;
+}
+.doc-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 2px 0;
+}
+.doc-content td,
+.doc-content th {
+  border: 1px solid #555;
+  padding: 5px 8px;
+  vertical-align: top;
+}
+.doc-content p {
+  margin: 4px 0;
+  line-height: 1.7;
+  font-size: 13px;
+}

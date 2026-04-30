@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: report-draft
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
