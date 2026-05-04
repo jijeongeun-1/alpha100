@@ -31,7 +31,7 @@ export default function TypeSelector({ value, onChange }: Props) {
     <div>
       <div className="flex items-center gap-1.5 mb-2">
         <p className="text-sm font-semibold text-gray-700">사업 유형 선택</p>
-        <span className="text-xs font-medium text-red-500">필수</span>
+        <span className="text-sm font-semibold text-red-500">*</span>
         <div className="relative" ref={tooltipRef}>
           <button
             onClick={() => setShowTooltip((v) => !v)}

@@ -82,6 +82,7 @@ export default function Home() {
   }
 
   function handleReset() {
+    if (!window.confirm('입력한 내용을 초기화 하시나요?')) return
     timersRef.current.forEach(clearTimeout)
     setState(INITIAL)
     setStatus('idle')
@@ -98,14 +99,25 @@ export default function Home() {
             <p className="text-xs text-gray-400 font-medium">정부지원사업</p>
             <h1 className="text-sm font-bold text-white leading-tight">사후보고서 초안 자동화</h1>
           </div>
-          {(status === 'done' || state.files.length > 0) && (
-            <button
-              onClick={handleReset}
-              className="text-xs text-gray-400 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-gray-700"
-            >
-              초기화
-            </button>
-          )}
+          {(() => {
+            const hasAnyInput = !!state.projectType || state.files.length > 0 || state.memo.trim().length > 0 || status === 'done'
+            return (
+              <button
+                onClick={handleReset}
+                disabled={!hasAnyInput}
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors
+                  ${hasAnyInput
+                    ? 'text-white hover:text-red-300 hover:bg-gray-700 cursor-pointer'
+                    : 'text-gray-600 cursor-not-allowed'
+                  }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                초기화
+              </button>
+            )
+          })()}
         </div>
 
         {/* 인풋 스크롤 영역 */}
@@ -116,6 +128,7 @@ export default function Home() {
           <section>
             <div className="flex items-center gap-2 mb-2">
               <p className="text-sm font-semibold text-gray-700">파일 업로드</p>
+              <span className="text-sm font-semibold text-red-500">*</span>
               <div className="flex gap-1">
                 {[
                   { label: '사전', ok: hasPrevReport },

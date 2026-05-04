@@ -113,7 +113,7 @@ export default function UnifiedUploadZone({ files, onAdd, onRemove, onRoleChange
 
   const ALL_ROLES: FileRole[] = ['prev-report', 'work', 'template']
   const allRolesCovered = ALL_ROLES.every((r) => files.some((f) => f.role === r))
-  const showRoleError = files.length >= 3 && !allRolesCovered
+  const showRoleError = files.length > 0 && !allRolesCovered
   const showRoleSuccess = allRolesCovered
 
   return (
