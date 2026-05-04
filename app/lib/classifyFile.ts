@@ -2,16 +2,18 @@ export type FileRole = 'prev-report' | 'work' | 'template' | 'unassigned'
 
 const PREV_REPORT_KEYWORDS = [
   '사전', '계획서', '협약서', '신청서', '선정', '과제', '제안서', '사업계획',
-  '과업지시서', '과업지시',
+  '과업지시서', '과업지시', '계약서', '위탁계약', '용역계약',
 ]
 
 const TEMPLATE_KEYWORDS = [
   '템플릿', '양식', '서식', '사후', '결과보고', '보고서양식', '보고양식',
   '결과보고서', '과업결과보고서', '과업결과', '산출물보고', '최종보고',
+  '완료보고서', '완료보고', '수행결과보고서', '사업수행결과',
 ]
 
 const WORK_KEYWORDS = [
   '확인', '검수확인', '결과물', '작업물', '산출물', '결과확인', '결과자료', '작업물자료',
+  '기획안', '디자인',
 ]
 
 export function classifyByFilename(filename: string): FileRole {
