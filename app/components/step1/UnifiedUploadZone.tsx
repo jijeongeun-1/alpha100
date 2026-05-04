@@ -107,11 +107,9 @@ export default function UnifiedUploadZone({ files, onAdd, onRemove, onRoleChange
     processFiles(e.dataTransfer.files)
   }
 
-  const groupedFiles = {
-    'prev-report': files.filter((f) => f.role === 'prev-report'),
-    'work': files.filter((f) => f.role === 'work'),
-    'template': files.filter((f) => f.role === 'template'),
-  }
+  // 사전 → 사후(템플릿) → 결과물 순으로 정렬
+  const ROLE_DISPLAY_ORDER: FileRole[] = ['prev-report', 'template', 'work']
+  const sortedFiles = ROLE_DISPLAY_ORDER.flatMap((role) => files.filter((f) => f.role === role))
 
   const ALL_ROLES: FileRole[] = ['prev-report', 'work', 'template']
   const allRolesCovered = ALL_ROLES.every((r) => files.some((f) => f.role === r))
@@ -121,9 +119,9 @@ export default function UnifiedUploadZone({ files, onAdd, onRemove, onRoleChange
   return (
     <div className="flex flex-col gap-3">
       {/* 안내 문구 */}
-      <div className="text-xs text-gray-500 leading-relaxed">
+      <div className="text-xs text-gray-500">
         <p className="mb-1">아래 파일을 모두 업로드 해주세요.</p>
-        <ol className="list-decimal list-inside space-y-0.5 text-gray-500">
+        <ol className="list-decimal list-inside space-y-0.5 text-gray-500 leading-snug">
           <li>정부건 사전 서류 PDF <span className="text-gray-400">(과업지시서, 수행계획서, 위탁개발계획서 등)</span></li>
           <li>정부건 사후 서류 PDF <span className="text-gray-400">(검수조서, 결과보고서 등)</span></li>
           <li>실무부서에서 제작한 사후 결과물 PDF</li>
@@ -136,19 +134,21 @@ export default function UnifiedUploadZone({ files, onAdd, onRemove, onRoleChange
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
-        className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl p-8 cursor-pointer transition-all
+        className={`flex flex-col items-center justify-center gap-1.5 border-2 border-dashed rounded-xl py-5 px-6 cursor-pointer transition-all
           ${dragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'}`}
       >
-        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-          <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
         </div>
         <p className="text-sm text-gray-500 text-center">
           <span className="text-blue-600 font-medium">파일 선택</span> 또는 여기에 드래그
         </p>
-        <p className="text-xs text-gray-400">PDF, JPG, PNG, MP4, PPTX · 파일당 최대 {MAX_SINGLE_MB}MB · 전체 {MAX_TOTAL_MB}MB</p>
-        <p className="text-xs text-gray-400">HWP 파일은 PDF로 변환 후 업로드해 주세요.</p>
+        <div className="text-xs text-gray-400 text-center leading-snug">
+          <p>PDF, JPG, PNG, MP4, PPTX · 파일당 최대 {MAX_SINGLE_MB}MB · 전체 {MAX_TOTAL_MB}MB</p>
+          <p>HWP 파일은 PDF로 변환 후 업로드해 주세요.</p>
+        </div>
         <input
           ref={inputRef}
           type="file"
@@ -161,78 +161,72 @@ export default function UnifiedUploadZone({ files, onAdd, onRemove, onRoleChange
 
       {error && <p className="text-xs text-red-500 px-1">{error}</p>}
 
-      {/* 파일 추가 버튼 (파일 있을 때) */}
-      {files.length > 0 && (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="text-xs text-blue-600 hover:text-blue-800 font-medium text-left px-1"
-        >
-          + 파일 추가
-        </button>
+      {/* 파일 목록 (사전 → 사후 → 결과물 순, 그룹 타이틀 없음) */}
+      {sortedFiles.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {sortedFiles.map((f) => (
+            <li key={f.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base">{FILE_ICONS[f.type] ?? '📎'}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-700 truncate">{f.name}</p>
+                  <p className="text-xs text-gray-400">{formatSize(f.size)}</p>
+                </div>
+                <select
+                  value={f.role}
+                  onChange={(e) => onRoleChange(f.id, e.target.value as FileRole)}
+                  className={`text-xs font-medium px-2 py-1 rounded-md border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 ${ROLE_COLORS[f.role]}`}
+                >
+                  {ROLE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => onRemove(f.id)}
+                  className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 flex-shrink-0"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {f.role === 'work' && (
+                <input
+                  type="text"
+                  placeholder="이 파일에 대해 추가 설명이 있으면 입력하세요 (선택)"
+                  value={f.memo ?? ''}
+                  onChange={(e) => onMemoChange(f.id, e.target.value)}
+                  className="mt-2 w-full text-xs border border-gray-200 rounded-md px-2.5 py-1.5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+              )}
+            </li>
+          ))}
+        </ul>
       )}
 
-      {/* 분류별 파일 목록 */}
-      {files.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {(Object.entries(groupedFiles) as [FileRole, UploadedFile[]][])
-            .filter(([, list]) => list.length > 0)
-            .map(([role, list]) => (
-              <div key={role}>
-                <p className="text-xs font-semibold text-gray-500 px-1 mb-1">{ROLE_LABELS[role]} ({list.length})</p>
-                <ul className="flex flex-col gap-2">
-                  {list.map((f) => (
-                    <li key={f.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{FILE_ICONS[f.type] ?? '📎'}</span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-gray-700 truncate">{f.name}</p>
-                          <p className="text-xs text-gray-400">{formatSize(f.size)}</p>
-                        </div>
-                        {/* 역할 드롭다운 */}
-                        <select
-                          value={f.role}
-                          onChange={(e) => onRoleChange(f.id, e.target.value as FileRole)}
-                          className={`text-xs font-medium px-2 py-1 rounded-md border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 ${ROLE_COLORS[f.role]}`}
-                        >
-                          {ROLE_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
-                        </select>
-                        <button
-                          onClick={() => onRemove(f.id)}
-                          className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 flex-shrink-0"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                      {f.role === 'work' && (
-                        <input
-                          type="text"
-                          placeholder="이 파일에 대해 추가 설명이 있으면 입력하세요 (선택)"
-                          value={f.memo ?? ''}
-                          onChange={(e) => onMemoChange(f.id, e.target.value)}
-                          className="mt-2 w-full text-xs border border-gray-200 rounded-md px-2.5 py-1.5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                        />
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-
-          {/* 파일 분류 상태 안내 */}
-          {showRoleError && (
-            <p className="text-xs text-red-500 px-1 pt-1">
-              모든 유형의 파일을 업로드 해주세요. (사전보고서 서류 / 작업 결과물 / 사후보고서 템플릿)
-            </p>
-          )}
-          {showRoleSuccess && (
-            <p className="text-xs text-green-600 px-1 pt-1">
-              파일의 유형이 올바른지 검토 후 초안 작성을 시작해주세요.
-            </p>
-          )}
+      {/* 파일 분류 상태 안내 (toast 스타일) */}
+      {files.length > 0 && showRoleError && (
+        <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5">
+          <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <p className="text-xs text-red-700 leading-snug">
+            모든 유형의 파일을 업로드 해주세요. (사전보고서 서류 / 작업 결과물 / 사후보고서 템플릿)
+          </p>
+        </div>
+      )}
+      {files.length > 0 && showRoleSuccess && (
+        <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2.5">
+          <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p className="text-xs text-green-700 leading-snug">
+            파일의 유형이 올바른지 검토 후 초안 작성을 시작해주세요.
+          </p>
         </div>
       )}
     </div>
