@@ -20,8 +20,9 @@ const ROLE_OPTIONS: { value: FileRole; label: string }[] = [
   { value: 'prev-report', label: '사전보고서 서류' },
   { value: 'work', label: '작업 결과물' },
   { value: 'template', label: '사후보고서 템플릿' },
-  { value: 'unassigned', label: '미분류' },
 ]
+
+const FALLBACK_ROLE_ORDER: FileRole[] = ['work', 'prev-report', 'template']
 
 const ROLE_COLORS: Record<FileRole, string> = {
   'prev-report': 'bg-blue-100 text-blue-700',
@@ -83,6 +84,20 @@ export default function UnifiedUploadZone({ files, onAdd, onRemove, onRoleChange
       setError(`전체 파일 용량이 ${MAX_TOTAL_MB}MB를 초과했습니다.`)
       return
     }
+
+    // 키워드로 분류되지 않은 파일을 아직 채워지지 않은 역할로 자동 배정
+    const coveredRoles = new Set<FileRole>([
+      ...files.map((f) => f.role).filter((r) => r !== 'unassigned'),
+      ...newFiles.filter((f) => f.role !== 'unassigned').map((f) => f.role),
+    ])
+    const missingRoles = FALLBACK_ROLE_ORDER.filter((r) => !coveredRoles.has(r))
+    let missingIdx = 0
+    for (const file of newFiles) {
+      if (file.role === 'unassigned') {
+        file.role = missingIdx < missingRoles.length ? missingRoles[missingIdx++] : 'work'
+      }
+    }
+
     onAdd(newFiles)
   }
 
@@ -96,8 +111,12 @@ export default function UnifiedUploadZone({ files, onAdd, onRemove, onRoleChange
     'prev-report': files.filter((f) => f.role === 'prev-report'),
     'work': files.filter((f) => f.role === 'work'),
     'template': files.filter((f) => f.role === 'template'),
-    'unassigned': files.filter((f) => f.role === 'unassigned'),
   }
+
+  const ALL_ROLES: FileRole[] = ['prev-report', 'work', 'template']
+  const allRolesCovered = ALL_ROLES.every((r) => files.some((f) => f.role === r))
+  const showRoleError = files.length >= 3 && !allRolesCovered
+  const showRoleSuccess = allRolesCovered
 
   return (
     <div className="flex flex-col gap-3">
@@ -202,6 +221,18 @@ export default function UnifiedUploadZone({ files, onAdd, onRemove, onRoleChange
                 </ul>
               </div>
             ))}
+
+          {/* 파일 분류 상태 안내 */}
+          {showRoleError && (
+            <p className="text-xs text-red-500 px-1 pt-1">
+              모든 유형의 파일을 업로드 해주세요. (사전보고서 서류 / 작업 결과물 / 사후보고서 템플릿)
+            </p>
+          )}
+          {showRoleSuccess && (
+            <p className="text-xs text-green-600 px-1 pt-1">
+              파일의 유형이 올바른지 검토 후 초안 작성을 시작해주세요.
+            </p>
+          )}
         </div>
       )}
     </div>
