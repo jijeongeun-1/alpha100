@@ -33,11 +33,13 @@ export default function Home() {
   const hasWork = state.files.some((f) => f.role === 'work')
   const hasTemplate = state.files.some((f) => f.role === 'template')
   const hasAnyFile = state.files.length > 0
-  const canRun = !!state.projectType && hasAnyFile && status !== 'loading'
+  const allFileTypesCovered = hasPrevReport && hasWork && hasTemplate
+  const canRun = !!state.projectType && allFileTypesCovered && status !== 'loading'
 
   function getMissingHint() {
     if (!state.projectType) return '사업 유형을 선택해 주세요.'
-    if (!hasAnyFile) return '파일을 1개 이상 업로드해 주세요.'
+    if (!hasAnyFile) return '파일을 업로드해 주세요.'
+    if (!allFileTypesCovered) return '3가지 유형의 파일을 모두 업로드해 주세요.'
     return ''
   }
 
