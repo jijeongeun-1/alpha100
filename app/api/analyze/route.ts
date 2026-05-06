@@ -56,20 +56,17 @@ export async function POST(req: NextRequest) {
 
     const response = await client.chat.completions.create({
       model: 'gpt-4o',
-      max_tokens: 6000,
+      max_tokens: 10000,
+      temperature: 0.3,
+      response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userPrompt },
       ],
     })
 
-    const raw = response.choices[0]?.message?.content ?? ''
-
-    // JSON 블록 추출 (```json ... ``` 또는 순수 JSON)
-    const jsonMatch = raw.match(/```json\s*([\s\S]*?)```/) ?? raw.match(/(\{[\s\S]*\})/)
-    const jsonText = jsonMatch ? jsonMatch[1] ?? jsonMatch[0] : raw
-
-    const draft = JSON.parse(jsonText)
+    const raw = response.choices[0]?.message?.content ?? '{}'
+    const draft = JSON.parse(raw)
 
     return NextResponse.json({ draft })
   } catch (error) {

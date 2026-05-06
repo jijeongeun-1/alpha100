@@ -61,6 +61,7 @@ async function copyHtml(html: string, plain: string) {
 export default function Step3({ draft, onRerun, onReset }: Props) {
   const [copiedAll, setCopiedAll] = useState(false)
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
+  const [copyError, setCopyError] = useState('')
 
   const sections = draft.templateSections ?? []
   const hasTemplate = sections.length > 0
@@ -71,6 +72,11 @@ export default function Step3({ draft, onRerun, onReset }: Props) {
     return contentRefs.current[i]?.innerHTML ?? sections[i]?.content ?? ''
   }
 
+  function showCopyError() {
+    setCopyError('복사에 실패했습니다. 브라우저 설정을 확인해 주세요.')
+    setTimeout(() => setCopyError(''), 3000)
+  }
+
   async function handleCopyAll() {
     const liveHtml = buildFullHtml(
       sections.map((s, i) => ({ ...s, content: getLiveHtml(i) }))
@@ -78,18 +84,26 @@ export default function Step3({ draft, onRerun, onReset }: Props) {
     const plain = sections
       .map((s, i) => `[${s.title}]\n${htmlToPlain(getLiveHtml(i))}`)
       .join('\n\n')
-    await copyHtml(liveHtml, plain)
-    setCopiedAll(true)
-    setTimeout(() => setCopiedAll(false), 1500)
+    try {
+      await copyHtml(liveHtml, plain)
+      setCopiedAll(true)
+      setTimeout(() => setCopiedAll(false), 1500)
+    } catch {
+      showCopyError()
+    }
   }
 
   async function handleCopySection(i: number, section: TemplateSection) {
     const liveContent = getLiveHtml(i)
     const html = `<div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;line-height:1.7">${liveContent}</div>`
     const plain = htmlToPlain(liveContent)
-    await copyHtml(html, plain)
-    setCopiedIdx(i)
-    setTimeout(() => setCopiedIdx(null), 1500)
+    try {
+      await copyHtml(html, plain)
+      setCopiedIdx(i)
+      setTimeout(() => setCopiedIdx(null), 1500)
+    } catch {
+      showCopyError()
+    }
   }
 
   return (
@@ -114,6 +128,11 @@ export default function Step3({ draft, onRerun, onReset }: Props) {
           </button>
         )}
       </div>
+
+      {/* 복사 실패 메시지 */}
+      {copyError && (
+        <p className="text-xs text-red-500 px-1">{copyError}</p>
+      )}
 
       {/* 문서 미리보기 */}
       {hasTemplate ? (
