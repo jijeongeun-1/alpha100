@@ -26,16 +26,62 @@ export interface ScheduleRow {
   months: boolean[]
 }
 
-export interface CaptionSuggestion {
-  id: string
-  source: string
-  caption: string
-  description: string
-}
-
 export interface TemplateSection {
   title: string
   content: string
+}
+
+export interface FactSheetCompany {
+  name: string
+  representative: string
+  bizNumber: string
+  address: string
+  contactName: string
+  contactRole: string
+  contactPhone: string
+  contactEmail: string
+}
+
+export interface FactSheetSchedulePhase {
+  phase: string
+  detail: string
+  startDate: string
+  endDate: string
+}
+
+export interface FactSheetWorkArea {
+  label: string
+  detail: string
+}
+
+export type SectionType = 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
+
+export interface TemplateMeta {
+  title: string
+  type: SectionType
+  needsImage: boolean
+  expectedRows?: string[]
+  notes?: string
+}
+
+export interface FactSheet {
+  client: FactSheetCompany
+  vendor: FactSheetCompany
+  overview: {
+    projectName: string
+    voucherNumber: string
+    periodStart: string
+    periodEnd: string
+    amount: string
+    deliverables: string[]
+  }
+  background: {
+    clientStatus: string
+    necessity: string
+  }
+  workAreas: FactSheetWorkArea[]
+  schedule: FactSheetSchedulePhase[]
+  expectedEffects: string[]
 }
 
 export interface SectionDraft {
@@ -52,9 +98,7 @@ export interface SectionDraft {
   content: string[]
   method: string
   process: string
-  processCaption: CaptionSuggestion[]
   result: string
-  resultCaption: CaptionSuggestion[]
   templateSections?: TemplateSection[]
 }
 

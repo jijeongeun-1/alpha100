@@ -1,11 +1,10 @@
 services:
   - type: web
     name: report-draft
-    runtime: node
+    runtime: docker
+    dockerfilePath: ./Dockerfile
     region: singapore
-    plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm run start
+    plan: starter
     envVars:
       - key: OPENAI_API_KEY
         sync: false
