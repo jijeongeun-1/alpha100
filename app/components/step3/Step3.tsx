@@ -13,20 +13,32 @@ const TABLE_STYLE = `
   font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
   font-size: 13px;
   line-height: 1.7;
+  width: 100%;
 `
+
+// 복사 HTML 후처리: 모든 table에 margin-bottom 주입 (표 아래 여백)
+function processContent(html: string): string {
+  return html.replace(
+    /(<table\b[^>]*\bstyle=")([^"]*?)(")/gi,
+    (match, before, style, after) => {
+      if (style.includes('margin-bottom')) return match
+      return `${before}${style};margin-bottom:16px${after}`
+    },
+  )
+}
 
 function buildSectionHtml(section: TemplateSection): string {
   return (
-    `<div style="margin-bottom:28px">` +
-    `<div style="font-size:14px;font-weight:bold;padding:6px 0;margin-bottom:10px;border-bottom:2px solid #222">${section.title}</div>` +
-    `<div style="${TABLE_STYLE}">${section.content}</div>` +
+    `<div style="margin-bottom:32px">` +
+    `<h2 style="font-size:18px;font-weight:bold;margin:0 0 12px 0;padding:6px 0;border-bottom:2px solid #222">${section.title}</h2>` +
+    `<div style="${TABLE_STYLE}">${processContent(section.content)}</div>` +
     `</div>`
   )
 }
 
 function buildFullHtml(sections: TemplateSection[]): string {
   return (
-    `<div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;line-height:1.7;max-width:800px">` +
+    `<div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;line-height:1.7;width:100%">` +
     sections.map(buildSectionHtml).join('') +
     `</div>`
   )
@@ -94,8 +106,8 @@ export default function Step3({ draft, onRerun, onReset }: Props) {
   }
 
   async function handleCopySection(i: number, section: TemplateSection) {
-    const liveContent = getLiveHtml(i)
-    const html = `<div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;line-height:1.7">${liveContent}</div>`
+    const liveContent = processContent(getLiveHtml(i))
+    const html = `<div style="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px;line-height:1.7;width:100%">${liveContent}</div>`
     const plain = htmlToPlain(liveContent)
     try {
       await copyHtml(html, plain)
