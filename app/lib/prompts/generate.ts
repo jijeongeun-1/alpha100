@@ -249,6 +249,7 @@ export function buildUserPrompt(params: {
   factSheetSummary?: string
   templateMetaSummary?: string
   hasWorkFilesImages?: boolean
+  hasTemplateImages?: boolean
 }): string {
   const {
     projectType,
@@ -257,12 +258,17 @@ export function buildUserPrompt(params: {
     factSheetSummary,
     templateMetaSummary,
     hasWorkFilesImages,
+    hasTemplateImages,
   } = params
 
   const sections = [
     `[사업 유형]\n${projectType === 'package' ? '패키지 (예비창업패키지/초기창업패키지/재도전패키지 등)' : '바우처 (혁신바우처/관광바우처/제조바우처 등)'}`,
 
     factSheetSummary || null,
+
+    hasTemplateImages
+      ? `[사후보고서 양식 이미지 — 레이아웃 재현 기준]\n사후보고서 양식(템플릿) PDF의 모든 페이지가 이 메시지에 첫 번째 이미지 그룹으로 첨부되어 있습니다.\n양식 이미지를 직접 보고 표 구조·열 수·체크박스 위치·수요기업/수행기관 행 배치를\ntemplateSection의 각 content에 그대로 재현합니다. 양식과 다른 레이아웃으로 단순화하지 않습니다.`
+      : null,
 
     templateMetaSummary || null,
 
@@ -286,6 +292,7 @@ export function buildUserPrompt(params: {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 templateSections 배열은 위 [사전 분석된 사후보고서 양식 섹션 메타데이터]의 title 목록을
 **동일한 순서로, 빠짐없이, 추가 없이** 모두 포함해야 합니다.
+${hasTemplateImages ? '※ 양식 이미지가 첨부되어 있으므로 각 섹션의 표 구조·열 수·체크박스를 이미지에서 직접 확인하고 동일하게 재현합니다. 단순화 금지.' : ''}
 
 작성 규칙:
 1. 메타데이터의 모든 title을 templateSections에 포함합니다 (누락 금지, 추가 금지).

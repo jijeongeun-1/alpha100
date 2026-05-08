@@ -6,16 +6,18 @@ import { randomUUID } from 'crypto'
 
 export async function parsePdfPages(
   buffer: Buffer,
-  opts?: { dpi?: number },
+  opts?: { dpi?: number; maxPages?: number },
 ): Promise<string[]> {
   const dpi = opts?.dpi ?? 150
+  const maxPages = opts?.maxPages
   const id = randomUUID()
   const inputPath = join(tmpdir(), `pdf-input-${id}.pdf`)
   const outputPrefix = join(tmpdir(), `pdf-pages-${id}`)
 
   try {
     writeFileSync(inputPath, buffer)
-    execSync(`pdftoppm -png -r ${dpi} "${inputPath}" "${outputPrefix}"`, {
+    const pageFlag = maxPages ? `-l ${maxPages}` : ''
+    execSync(`pdftoppm -png -r ${dpi} ${pageFlag} "${inputPath}" "${outputPrefix}"`, {
       timeout: 60_000,
       maxBuffer: 200 * 1024 * 1024,
     })

@@ -146,7 +146,7 @@ export default function UnifiedUploadZone({ files, onAdd, onRemove, onRoleChange
           <span className="text-blue-600 font-medium">파일 선택</span> 또는 여기에 드래그
         </p>
         <div className="text-xs text-gray-400 text-center leading-snug">
-          <p>PDF, JPG, PNG, MP4, PPTX · 파일당 최대 {MAX_SINGLE_MB}MB · 전체 {MAX_TOTAL_MB}MB</p>
+          <p>PDF, JPG, PNG, MP4, PPTX · 결과물 최대 20MB · 기타 최대 30MB · 전체 {MAX_TOTAL_MB}MB</p>
           <p>HWP 파일은 PDF로 변환 후 업로드해 주세요.</p>
         </div>
         <input

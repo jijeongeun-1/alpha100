@@ -23,15 +23,22 @@ const MODEL = 'gpt-4o'
 export const runtime = 'nodejs'
 export const maxDuration = 120
 
+const MAX_FILE_SIZES: Record<string, number> = {
+  'template':    30 * 1024 * 1024,
+  'prev-report': 30 * 1024 * 1024,
+  'work':        20 * 1024 * 1024,
+}
+const WORK_MAX_PAGES = 20
+
 type FileResult =
   | { kind: 'images'; images: string[] }
   | { kind: 'text'; text: string }
 
-async function processFile(buffer: Buffer, filename: string): Promise<FileResult> {
+async function processFile(buffer: Buffer, filename: string, maxPages?: number): Promise<FileResult> {
   const ext = filename.split('.').pop()?.toLowerCase() ?? ''
   try {
     if (ext === 'pdf') {
-      const images = await parsePdfPages(buffer)
+      const images = await parsePdfPages(buffer, { maxPages })
       return { kind: 'images', images }
     }
     if (ext === 'pptx') {
@@ -57,18 +64,40 @@ export async function POST(req: NextRequest) {
 
     const entries = Array.from(formData.entries())
 
+    // 파일 크기 검증
     for (const [key, value] of entries) {
       if (!(value instanceof File)) continue
-      const buffer = Buffer.from(await value.arrayBuffer())
-      const result = await processFile(buffer, value.name)
+      const limit = MAX_FILE_SIZES[key]
+      if (limit && value.size > limit) {
+        const limitMB = limit / 1024 / 1024
+        const label = key === 'work' ? '결과물' : key === 'template' ? '사후보고서 템플릿' : '사전보고서'
+        return NextResponse.json(
+          { error: `"${value.name}" 파일이 너무 큽니다. ${label} 파일은 최대 ${limitMB}MB까지 업로드 가능합니다.` },
+          { status: 400 },
+        )
+      }
+    }
 
-      if (key === 'prev-report') {
-        if (result.kind === 'images') prevReportImages = [...prevReportImages, ...result.images]
-      } else if (key === 'work') {
-        if (result.kind === 'images') workFilesImages = [...workFilesImages, ...result.images]
-        else workFilesText += `\n--- ${value.name} ---\n${result.text}`
-      } else if (key === 'template') {
-        if (result.kind === 'images') templateImages = [...templateImages, ...result.images]
+    // 유형별 그룹화 후 template → prev-report → work 순서로 처리
+    const groups: Record<string, File[]> = { template: [], 'prev-report': [], work: [] }
+    for (const [key, value] of entries) {
+      if (value instanceof File && key in groups) groups[key].push(value)
+    }
+
+    for (const key of ['template', 'prev-report', 'work'] as const) {
+      for (const file of groups[key]) {
+        const buffer = Buffer.from(await file.arrayBuffer())
+        const maxPages = key === 'work' ? WORK_MAX_PAGES : undefined
+        const result = await processFile(buffer, file.name, maxPages)
+
+        if (key === 'prev-report') {
+          if (result.kind === 'images') prevReportImages = [...prevReportImages, ...result.images]
+        } else if (key === 'work') {
+          if (result.kind === 'images') workFilesImages = [...workFilesImages, ...result.images]
+          else workFilesText += `\n--- ${file.name} ---\n${result.text}`
+        } else if (key === 'template') {
+          if (result.kind === 'images') templateImages = [...templateImages, ...result.images]
+        }
       }
     }
 
@@ -100,6 +129,7 @@ export async function POST(req: NextRequest) {
       factSheetSummary,
       templateMetaSummary,
       hasWorkFilesImages: workFilesImages.length > 0,
+      hasTemplateImages: templateImages.length > 0,
     })
 
     if (process.env.NODE_ENV === 'development') {
@@ -119,6 +149,10 @@ export async function POST(req: NextRequest) {
     type ContentPart = OpenAI.Chat.Completions.ChatCompletionContentPart
     const userContent: ContentPart[] = [
       { type: 'text', text: userPrompt },
+      ...templateImages.map((url): ContentPart => ({
+        type: 'image_url',
+        image_url: { url, detail: 'high' },
+      })),
       ...workFilesImages.map((url): ContentPart => ({
         type: 'image_url',
         image_url: { url, detail: 'high' },
