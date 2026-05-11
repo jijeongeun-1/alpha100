@@ -3,6 +3,7 @@ import OpenAI from 'openai'
 import { parsePdfPages } from '@/app/lib/parsers/parsePdfPages'
 import { parsePptxText } from '@/app/lib/parsers/parsePptx'
 import { SYSTEM_PROMPT, buildUserPrompt } from '@/app/lib/prompts'
+import { getRelevantWorkflows } from '@/app/lib/prompts/workflow'
 import { loadExample } from '@/app/lib/loadExamples'
 import {
   extractPreReport,
@@ -122,6 +123,10 @@ export async function POST(req: NextRequest) {
     const templateMetaSummary = templateMeta ? summarizeTemplateMeta(templateMeta) : ''
 
     const exampleText = await loadExample(projectType)
+    const workflowReference = factSheet
+      ? getRelevantWorkflows(factSheet.overview.deliverables)
+      : undefined
+
     const userPrompt = buildUserPrompt({
       projectType,
       workFilesText,
@@ -130,6 +135,7 @@ export async function POST(req: NextRequest) {
       templateMetaSummary,
       hasWorkFilesImages: workFilesImages.length > 0,
       hasTemplateImages: templateImages.length > 0,
+      workflowReference,
     })
 
     if (process.env.NODE_ENV === 'development') {
@@ -208,6 +214,7 @@ export async function POST(req: NextRequest) {
           templateMeta,
           report,
           workFilesText,
+          workflowReference,
         })
 
         if (process.env.NODE_ENV === 'development') {

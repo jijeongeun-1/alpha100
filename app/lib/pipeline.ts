@@ -15,6 +15,7 @@ export interface VerificationReport {
   sectionsMissing: string[]
   imagesMissing: string[]
   hallucinations: Array<{ sectionTitle: string; suspectedFact: string; reason: string }>
+  contentIssues: Array<{ sectionTitle: string; issue: string; suggestion: string }>
 }
 
 export interface PatchResult {
@@ -172,6 +173,7 @@ export async function verifyDraft(
     sectionsMissing: [],
     imagesMissing: [],
     hallucinations: [],
+    contentIssues: [],
   })
 }
 
@@ -179,7 +181,8 @@ export function hasIssues(report: VerificationReport): boolean {
   return (
     report.sectionsMissing.length > 0 ||
     report.imagesMissing.length > 0 ||
-    report.hallucinations.length > 0
+    report.hallucinations.length > 0 ||
+    (report.contentIssues?.length ?? 0) > 0
   )
 }
 
@@ -191,15 +194,17 @@ export async function patchDraft(
     templateMeta: TemplateMeta[]
     report: VerificationReport
     workFilesText: string
+    workflowReference?: string
   },
 ): Promise<PatchResult> {
-  const { draft, factSheet, templateMeta, report, workFilesText } = params
+  const { draft, factSheet, templateMeta, report, workFilesText, workflowReference } = params
   const userPrompt = buildPatchUserPrompt({
     verificationJson: JSON.stringify(report, null, 2),
     draftSectionsJson: JSON.stringify(draft.templateSections ?? [], null, 2),
     factSheetJson: JSON.stringify(factSheet, null, 2),
     templateMetaJson: JSON.stringify(templateMeta, null, 2),
     workFilesText,
+    workflowReference,
   })
 
   const response = await client.chat.completions.create({

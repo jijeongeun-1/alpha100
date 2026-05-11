@@ -77,6 +77,7 @@ export interface FactSheet {
   }
   background: {
     clientStatus: string
+    problem: string
     necessity: string
   }
   workAreas: FactSheetWorkArea[]
